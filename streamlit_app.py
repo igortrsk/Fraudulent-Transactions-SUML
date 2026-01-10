@@ -11,7 +11,6 @@ MODEL_DEFAULT_PATH = "models/fraud_rf_bundle.pkl"
 
 st.set_page_config(page_title="Ecomm Fraud Prediction", layout="wide")
 st.title("Fraud prediction")
-st.caption("Tryb 1: Pojedyńcza transakcja. Tryb 2: CSV Batch (id,amount,account_age)")
 
 def load_model(model_path: str):
     return load_bundle_pickle(Path(model_path))
@@ -40,7 +39,7 @@ def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
                          f"Indeksy z błędem: {df_in.index[bad].tolist()}")
     return df_feat[FEATURES]
 def _is_fraudulent_style(val: bool) -> str:
-    if bool(val):
+    if str(val) == "True":
         return "background-color: #ff4b4b; color: white; font-weight: 700;"
     return "background-color: #2ecc71; color: white; font-weight: 700;"
 
@@ -67,7 +66,6 @@ if mode.startswith("Opcja 1"):
     if st.button("Sprawdź", type="primary"):
         df_x = make_features_df_from_single(amount, account_age)
         scored = predict_dataframe(bundle, df_x)
-        print("SCORED:",scored)
         row = scored.iloc[0]
 
         pred = int(row["predicted_value"])
@@ -87,7 +85,7 @@ if mode.startswith("Opcja 1"):
         m3.metric("Pewność (max prob)", f"{confidence:.3f}")
 
         with st.expander("Szczegóły (raw output)"):
-            st.dataframe(scored, use_container_width=True)
+            st.dataframe(scored, width='stretch', hide_index=True)
 else:
     st.subheader("Opcja 2: CSV (id, amount, account_age)")
     uploaded = st.file_uploader("Wgraj CSV (kolumny: id, amount, account_age)", type=["csv"])
@@ -95,26 +93,26 @@ else:
         st.info("Wygraj CSV (kolumny: id, amount, account_age)")
         st.stop()
     try:
-        df_in = read_csv(uploaded)
+        df_in = pd.read_csv(uploaded)
     except Exception as e:
         st.error(f"Nie można wczytać CSV: {e}")
         st.stop()
-    st.write("Podgląd danych")
-    st.dataframe(df_in.head(15), use_container_width=True)
+    st.write("Podgląd danych - 15 wierszy")
+    st.dataframe(df_in.head(15), width='stretch', hide_index=True)
     if st.button("Ewaluuj", type="primary"):
         try:
             df_x = make_features_df_from_batch(df_in)
             scored = predict_dataframe(bundle, df_x)
 
             pred_col = "predicted_value" if "predicted_value" in scored.columns else "prediction"
-            pred = int(scored[pred_col])
+            pred = scored[pred_col].astype(int)
             out = df_in[["id", "amount", "account_age"]].copy()
-            out["Is Fraudulent"] = (pred == 1).astype(bool)
+            out["Is Fraudulent"] = (pred == 1).map({True: "True", False: "False"})
 
             styled = out.style.applymap(_is_fraudulent_style, subset=["Is Fraudulent"])
 
             st.write("Wyniki:")
-            st.dataframe(styled, use_container_width=True)
+            st.dataframe(styled, width='stretch', hide_index=True)
 
         except Exception as e:
             st.error(e)
