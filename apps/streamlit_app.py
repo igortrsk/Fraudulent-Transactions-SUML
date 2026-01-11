@@ -1,9 +1,21 @@
 from pathlib import Path
+import sys 
 import io
 import pandas as pd
 import streamlit as st
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 from config import FEATURES
 from src.inference import predict_dataframe
+from app import load_bundle_pickle
+
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from app import load_bundle_pickle
 
