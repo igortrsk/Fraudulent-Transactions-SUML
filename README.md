@@ -37,7 +37,7 @@ Do treningu i ewaluacji projekt potrzebuje CSV z kolumnami:
 - `Is Fraudulent` (0/1)
 
 ## Uruchomienie - CLI
-
+#### Kod uruchamiany w katalogu domowym projektu
 ### Trening
 `--data` = ścieżka do pliku CSV (musi zawierać kolumny: `Transaction Amount`, `Account Age Days`, `Is Fraudulent`)
 ```
