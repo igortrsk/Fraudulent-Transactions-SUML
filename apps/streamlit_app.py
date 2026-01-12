@@ -72,7 +72,7 @@ if mode.startswith("Opcja 1"):
     st.subheader("Opcja 1 - pojedyńcza transakcja")
     c1,c2 = st.columns([1,1])
     with c1:
-        amount = st.number_input("Amount",min_value=0, placeholder="Input transaction amount")
+        amount = st.number_input("Amount",min_value=0.0,step=0.01, placeholder="Input transaction amount", format="%.2f")
     with c2:
         account_age = st.number_input("Account Age (days)",min_value=0, placeholder="Input account age in days")
     if st.button("Sprawdź", type="primary"):
