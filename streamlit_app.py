@@ -1,3 +1,12 @@
+"""Streamlit UI for fraud prediction.
+
+Provides two modes:
+1) Manual input: single transaction prediction from Amount and Account Age Days.
+2) CSV batch input: predictions for uploaded CSV with columns (id, amount, account_age).
+
+The app loads a pickled `ModelBundle` and uses the same preprocessing + model
+logic as the CLI inference utilities.
+"""
 from pathlib import Path
 import io
 import pandas as pd
@@ -13,18 +22,61 @@ st.set_page_config(page_title="Ecomm Fraud Prediction", layout="wide")
 st.title("Fraud prediction")
 
 def load_model(model_path: str):
+    """Load a pickled model bundle from the given path.
+
+    Args:
+        model_path: Path to the pickled `ModelBundle`.
+
+    Returns:
+        Loaded `ModelBundle`.
+    """
     return load_bundle_pickle(Path(model_path))
 
 def read_csv(file_bytes: bytes) -> pd.DataFrame:
+    """Read a CSV file from raw bytes into a dataframe.
+
+    Args:
+        file_bytes: CSV content as bytes.
+
+    Returns:
+        Parsed dataframe.
+    """
     return pd.read_csv(io.BytesIO(file_bytes))
 
 def make_features_df_from_single(transaction_amount:float, account_age_days:int) -> pd.DataFrame:
+    """Create a single-row features dataframe from manual user input.
+
+    Args:
+        transaction_amount: Transaction amount value.
+        account_age_days: Account age expressed in days.
+
+    Returns:
+        Dataframe with exactly the columns expected by `config.FEATURES`.
+    """
     df = pd.DataFrame([{
         "Transaction Amount": float(transaction_amount),
         "Account Age Days": int(account_age_days),
     }])
     return df[FEATURES]
 def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
+    """Convert a batch input dataframe into model features.
+
+    Expects columns:
+    - id
+    - amount
+    - account_age
+
+    Values are coerced to numeric; rows failing coercion raise an error.
+
+    Args:
+        df_in: Raw uploaded dataframe.
+
+    Returns:
+        Dataframe containing `config.FEATURES`.
+
+    Raises:
+        ValueError: If required columns are missing or conversion to numeric fails.
+    """
     required = {"id", "amount", "account_age"}
     missing = required - set(df_in.columns)
     if missing:
@@ -39,6 +91,14 @@ def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
                          f"Indeksy z błędem: {df_in.index[bad].tolist()}")
     return df_feat[FEATURES]
 def _is_fraudulent_style(val: bool) -> str:
+    """Return CSS styling for the 'Is Fraudulent' column in Streamlit tables.
+
+    Args:
+        val: Value of the fraud flag.
+
+    Returns:
+        CSS style string for Streamlit's pandas Styler.
+    """
     if str(val) == "True":
         return "background-color: #ff4b4b; color: white; font-weight: 700;"
     return "background-color: #2ecc71; color: white; font-weight: 700;"

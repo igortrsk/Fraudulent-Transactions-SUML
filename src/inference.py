@@ -1,4 +1,12 @@
-"""Inference and evaluation utilities for the fraud RandomForest model bundle."""
+"""Inference and evaluation utilities for the fraud RandomForest model bundle.
+
+This module provides:
+- Scoring helpers that append predictions and probabilities to input dataframes.
+- Evaluation utilities for labeled datasets, producing common classification metrics.
+
+The functions assume the preprocessing artifacts stored in `ModelBundle` are compatible
+with the input feature schema defined in `config.FEATURES`.
+"""
 
 from __future__ import annotations
 
@@ -19,7 +27,24 @@ from src.training import ModelBundle, TARGET_MAP
 
 
 def predict_dataframe(bundle: ModelBundle, df: pd.DataFrame) -> pd.DataFrame:
-    """Score a dataframe and return it with prediction columns appended."""
+    """Score a dataframe and append prediction outputs.
+
+    Validates that all required feature columns exist, applies the bundle's preprocessing,
+    and uses the trained model to compute class predictions and probabilities.
+
+    Args:
+        bundle: Trained `ModelBundle` containing the model and preprocessing artifacts.
+        df: Input dataframe containing at least the columns listed in `config.FEATURES`.
+
+    Returns:
+        A copy of `df` with additional columns:
+        - `predicted_value`: Predicted class label (int).
+        - `probability_of_value_0`: P(class=0).
+        - `probability_of_value_1`: P(class=1).
+
+    Raises:
+        ValueError: If any required feature columns are missing.
+    """
     missing = [c for c in FEATURES if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns for prediction: {missing}")
@@ -38,7 +63,31 @@ def predict_dataframe(bundle: ModelBundle, df: pd.DataFrame) -> pd.DataFrame:
 
 
 def evaluate_on_labeled_csv(bundle: ModelBundle, df: pd.DataFrame) -> dict[str, Any]:
-    """Evaluate a bundle on labeled data containing the target column."""
+    """Evaluate a trained bundle on labeled data.
+
+    Expects a dataframe that includes all feature columns and the target column. The target
+    is mapped through `TARGET_MAP` after converting to string. Rows with invalid or missing
+    target values are ignored.
+
+    Metrics include AUC, accuracy, confusion matrix, and a text classification report.
+
+    Args:
+        bundle: Trained `ModelBundle` containing the model and preprocessing artifacts.
+        df: Labeled dataframe containing `config.FEATURES` and `config.TARGET_COL`.
+
+    Returns:
+        A dictionary with evaluation results:
+        - `auc`: ROC AUC score (float).
+        - `accuracy`: Accuracy at threshold 0.5 (float).
+        - `n`: Number of evaluated rows (int).
+        - `positive_rate_true`: Mean of true labels (float).
+        - `positive_rate_pred`: Mean of predicted labels (float).
+        - `confusion_matrix`: [[TN, FP], [FN, TP]] as a nested list.
+        - `classification_report`: Text report from `sklearn.metrics.classification_report`.
+
+    Raises:
+        ValueError: If required columns are missing or no valid target values exist.
+    """
     missing = [c for c in FEATURES + [TARGET_COL] if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns for evaluation: {missing}")

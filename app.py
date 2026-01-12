@@ -1,3 +1,11 @@
+"""CLI entrypoint for training, predicting, and evaluating the fraud model bundle.
+
+Commands:
+- train: train a RandomForest model and export a pickled `ModelBundle`.
+- predict: load a saved bundle and score a CSV of features.
+- eval: load a saved bundle and evaluate it on a labeled CSV.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -11,12 +19,29 @@ from src.inference import predict_dataframe, evaluate_on_labeled_csv
 
 
 def save_bundle_pickle(bundle: ModelBundle, path: Path) -> None:
+    """Serialize and save a `ModelBundle` to disk using pickle.
+
+    Args:
+        bundle: The model bundle to serialize.
+        path: Output path for the pickle file.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("wb") as f:
         pickle.dump(bundle, f)
 
 
 def load_bundle_pickle(path: Path) -> ModelBundle:
+    """Load a pickled `ModelBundle` from disk.
+
+    Args:
+        path: Path to the pickle file.
+
+    Returns:
+        The deserialized `ModelBundle`.
+
+    Raises:
+        TypeError: If the pickle does not contain a `ModelBundle`.
+    """
     with path.open("rb") as f:
         obj = pickle.load(f)
     if not isinstance(obj, ModelBundle):
@@ -25,6 +50,11 @@ def load_bundle_pickle(path: Path) -> ModelBundle:
 
 
 def cmd_train(args: argparse.Namespace) -> None:
+    """Train a model bundle from a labeled CSV and save it to disk.
+
+    Args:
+        args: Parsed CLI arguments containing dataset path, output path, and split params.
+    """
     bundle, metrics = train_random_forest(
         train_path=Path(args.data),
         test_size=args.test_size,
@@ -41,6 +71,11 @@ def cmd_train(args: argparse.Namespace) -> None:
 
 
 def cmd_predict(args: argparse.Namespace) -> None:
+    """Load a saved bundle and score a CSV file containing feature columns.
+
+    Args:
+        args: Parsed CLI arguments containing model path, input CSV path, and output path.
+    """
     bundle = load_bundle_pickle(Path(args.model))
 
     df = pd.read_csv(args.data)
@@ -56,6 +91,11 @@ def cmd_predict(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser.
+
+    Returns:
+        An `ArgumentParser` configured with `train`, `predict`, and `eval` subcommands.
+    """
     p = argparse.ArgumentParser()
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -80,6 +120,11 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 def cmd_eval(args: argparse.Namespace) -> None:
+    """Load a saved bundle and evaluate it on a labeled CSV dataset.
+
+    Args:
+        args: Parsed CLI arguments containing model path and labeled CSV path.
+    """
     bundle = load_bundle_pickle(Path(args.model))
     df = pd.read_csv(args.data)
 
