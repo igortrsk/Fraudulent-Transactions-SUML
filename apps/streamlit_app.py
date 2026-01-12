@@ -17,8 +17,6 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from app import load_bundle_pickle
-
 MODEL_DEFAULT_PATH = "models/fraud_rf_bundle.pkl"
 
 st.set_page_config(page_title="Ecomm Fraud Prediction", layout="wide")
@@ -105,7 +103,7 @@ else:
         st.info("Wygraj CSV (kolumny: id, amount, account_age)")
         st.stop()
     try:
-        df_in = pd.read_csv(uploaded)
+        df_in = pd.read_csv(uploaded, sep=None, engine="python")
     except Exception as e:
         st.error(f"Nie można wczytać CSV: {e}")
         st.stop()
