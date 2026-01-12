@@ -103,7 +103,7 @@ else:
         st.info("Wygraj CSV (kolumny: id, amount, account_age)")
         st.stop()
     try:
-        df_in = pd.read_csv(uploaded, sep=None, engine="python")
+        df_in = pd.read_csv(uploaded, sep=r"[;,]", engine="python")
     except Exception as e:
         st.error(f"Nie można wczytać CSV: {e}")
         st.stop()
