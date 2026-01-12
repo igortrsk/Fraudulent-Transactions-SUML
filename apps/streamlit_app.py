@@ -28,7 +28,7 @@ def load_model(model_path: str):
     return load_bundle_pickle(Path(model_path))
 
 def read_csv(file_bytes: bytes) -> pd.DataFrame:
-    return pd.read_csv(io.BytesIO(file_bytes))
+    return pd.read_csv(io.BytesIO(file_bytes), decimal=",")
 
 def make_features_df_from_single(transaction_amount:float, account_age_days:int) -> pd.DataFrame:
     df = pd.DataFrame([{
@@ -42,7 +42,7 @@ def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
     if missing:
         raise ValueError(f"Brakuje kolumn: {missing}, Wymagane: {required}")
     df_feat = pd.DataFrame({
-        "Transaction Amount": pd.to_numeric(df_in["amount"], errors="coerce"),
+        "Transaction Amount": pd.to_numeric(df_in["amount"].astype(str).str.replace(",",".",regex=False), errors="coerce"),
         "Account Age Days": pd.to_numeric(df_in["account_age"], errors="coerce"),
     })
     bad = df_feat.isna().any(axis=1)
