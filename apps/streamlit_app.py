@@ -17,7 +17,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from config import FEATURES
+from config import FEATURES, REQUIRED_COLS
 from src.inference import predict_dataframe
 from app import load_bundle_pickle
 
@@ -29,6 +29,22 @@ if str(ROOT_DIR) not in sys.path:
 MODEL_DEFAULT_PATH = "models/fraud_rf_bundle.pkl"
 
 st.set_page_config(page_title="Ecomm Fraud Prediction", layout="wide")
+
+def read_csv_flexible(uploaded_file) -> pd.DataFrame:
+    raw_bytes = uploaded_file.getvalue()
+    text = raw_bytes.decode("utf-8", errors="replace")
+
+    header = text.splitlines()[0]
+    sep = ";" if header.count(";") >= header.count(",") else ","
+
+    df = pd.read_csv(io.StringIO(text), sep=sep)
+
+    missing = REQUIRED_COLS - set(df.columns)
+    if missing:
+        raise ValueError(f"Brakuje kolumn: {missing}. Wymagane: {REQUIRED_COLS}")
+
+    return df
+
 def load_css(path: str = "./css/style.css") -> None:
     css_path = Path(__file__).resolve().parent / path
     if not css_path.exists():
@@ -94,13 +110,28 @@ def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
     Raises:
         ValueError: If required columns are missing or conversion to numeric fails.
     """
-    required = {"id", "amount", "account_age"}
-    missing = required - set(df_in.columns)
+    missing = REQUIRED_COLS - set(df_in.columns)
     if missing:
-        raise ValueError(f"Brakuje kolumn: {missing}, Wymagane: {required}")
+        raise ValueError(f"Brakuje kolumn: {missing}, Wymagane: {REQUIRED_COLS}")
+
+    amount = (
+        df_in["amount"]
+        .astype(str)
+        .str.strip()
+        .str.replace(" ", "", regex=False)
+        .str.replace(",", ".", regex=False)
+    )
+    account_age = (
+        df_in["account_age"]
+        .astype(str)
+        .str.strip()
+        .str.replace(" ", "", regex=False)
+        .str.replace(",", ".", regex=False)
+    )
+
     df_feat = pd.DataFrame({
-        "Transaction Amount": pd.to_numeric(df_in["amount"].astype(str).str.replace(",",".",regex=False), errors="coerce"),
-        "Account Age Days": pd.to_numeric(df_in["account_age"], errors="coerce"),
+        "Transaction Amount": pd.to_numeric(amount, errors="coerce"),
+        "Account Age Days": pd.to_numeric(account_age, errors="coerce"),
     })
     bad = df_feat.isna().any(axis=1)
     if bool(bad.any()):
@@ -235,7 +266,7 @@ else:
         st.warning("Uwaga: Plik CSV musi używać kropki jako separatora dziesiętnego")
         st.stop()
     try:
-        df_in = pd.read_csv(uploaded, sep=r"[;,]", engine="python")
+        df_in = read_csv_flexible(uploaded)
     except Exception as e:
         st.error(f"Nie można wczytać CSV:{e}")
         st.warning("Uwaga: Plik CSV musi używać kropki jako separatora dziesiętnego")
