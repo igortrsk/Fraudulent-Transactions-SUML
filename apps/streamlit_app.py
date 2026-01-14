@@ -8,13 +8,23 @@ The app loads a pickled `ModelBundle` and uses the same preprocessing + model
 logic as the CLI inference utilities.
 """
 from pathlib import Path
+import sys 
 import io
 import pandas as pd
 import streamlit as st
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 from config import FEATURES
 from src.inference import predict_dataframe
-
 from app import load_bundle_pickle
+
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 MODEL_DEFAULT_PATH = "models/fraud_rf_bundle.pkl"
 
@@ -41,7 +51,8 @@ def read_csv(file_bytes: bytes) -> pd.DataFrame:
     Returns:
         Parsed dataframe.
     """
-    return pd.read_csv(io.BytesIO(file_bytes))
+
+    return pd.read_csv(io.BytesIO(file_bytes), decimal=",")
 
 def make_features_df_from_single(transaction_amount:float, account_age_days:int) -> pd.DataFrame:
     """Create a single-row features dataframe from manual user input.
@@ -82,7 +93,7 @@ def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
     if missing:
         raise ValueError(f"Brakuje kolumn: {missing}, Wymagane: {required}")
     df_feat = pd.DataFrame({
-        "Transaction Amount": pd.to_numeric(df_in["amount"], errors="coerce"),
+        "Transaction Amount": pd.to_numeric(df_in["amount"].astype(str).str.replace(",",".",regex=False), errors="coerce"),
         "Account Age Days": pd.to_numeric(df_in["account_age"], errors="coerce"),
     })
     bad = df_feat.isna().any(axis=1)
@@ -120,7 +131,7 @@ if mode.startswith("Opcja 1"):
     st.subheader("Opcja 1 - pojedyńcza transakcja")
     c1,c2 = st.columns([1,1])
     with c1:
-        amount = st.number_input("Amount",min_value=0, placeholder="Input transaction amount")
+        amount = st.number_input("Amount",min_value=0.0,step=0.01, placeholder="Input transaction amount", format="%.2f")
     with c2:
         account_age = st.number_input("Account Age (days)",min_value=0, placeholder="Input account age in days")
     if st.button("Sprawdź", type="primary"):
@@ -153,7 +164,7 @@ else:
         st.info("Wygraj CSV (kolumny: id, amount, account_age)")
         st.stop()
     try:
-        df_in = pd.read_csv(uploaded)
+        df_in = pd.read_csv(uploaded, sep=r"[;,]", engine="python")
     except Exception as e:
         st.error(f"Nie można wczytać CSV: {e}")
         st.stop()
