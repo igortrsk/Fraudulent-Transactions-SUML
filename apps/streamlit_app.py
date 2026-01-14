@@ -269,13 +269,11 @@ else:
     uploaded = st.file_uploader("Wgraj CSV (kolumny: id, amount, account_age)", type=["csv"])
     if uploaded is None:
         st.info("Wygraj CSV (kolumny: id, amount, account_age)")
-        st.warning("Uwaga: Plik CSV musi używać kropki jako separatora dziesiętnego")
         st.stop()
     try:
         df_in = read_csv_flexible(uploaded)
     except Exception as e:
         st.error(f"Nie można wczytać CSV:{e}")
-        st.warning("Uwaga: Plik CSV musi używać kropki jako separatora dziesiętnego")
         st.stop()
     st.write("Podgląd danych - 15 wierszy")
     st.dataframe(df_in.head(15), width='stretch', hide_index=True)
