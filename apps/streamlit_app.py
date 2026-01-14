@@ -8,23 +8,19 @@ The app loads a pickled `ModelBundle` and uses the same preprocessing + model
 logic as the CLI inference utilities.
 """
 from pathlib import Path
-import sys 
+import sys
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import io
 import pandas as pd
 import streamlit as st
-
-ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-
+from apps.app import load_bundle_pickle
 from config import FEATURES, REQUIRED_COLS
 from src.inference import predict_dataframe
-from app import load_bundle_pickle
 
-
-ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
 
 MODEL_DEFAULT_PATH = "models/fraud_rf_bundle.pkl"
 
@@ -67,7 +63,7 @@ def load_css(path: str = "./css/style.css") -> None:
     css_path = Path(__file__).resolve().parent / path
     if not css_path.exists():
         st.warning(f"Brakuje pliku CSS: {css_path.resolve()}")
-        return;
+        return
     st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 load_css()
 
@@ -97,7 +93,7 @@ def make_features_df_from_single(transaction_amount:float, account_age_days:int)
         "Account Age Days": int(account_age_days),
     }])
     return df[FEATURES]
-def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
+def make_features_df_from_batch(df_in_batch: pd.DataFrame) -> pd.DataFrame:
     """Convert a batch input dataframe into model features.
 
     Expects columns:
@@ -108,7 +104,7 @@ def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
     Values are coerced to numeric; rows failing coercion raise an error.
 
     Args:
-        df_in: Raw uploaded dataframe.
+        df_in_batch: Raw uploaded dataframe.
 
     Returns:
         Dataframe containing `config.FEATURES`.
@@ -116,19 +112,19 @@ def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
     Raises:
         ValueError: If required columns are missing or conversion to numeric fails.
     """
-    missing = REQUIRED_COLS - set(df_in.columns)
+    missing = REQUIRED_COLS - set(df_in_batch.columns)
     if missing:
         raise ValueError(f"Brakuje kolumn: {missing}, Wymagane: {REQUIRED_COLS}")
 
-    amount = (
-        df_in["amount"]
+    amount_batch = (
+        df_in_batch["amount"]
         .astype(str)
         .str.strip()
         .str.replace(" ", "", regex=False)
         .str.replace(",", ".", regex=False)
     )
-    account_age = (
-        df_in["account_age"]
+    account_age_batch = (
+        df_in_batch["account_age"]
         .astype(str)
         .str.strip()
         .str.replace(" ", "", regex=False)
@@ -136,13 +132,15 @@ def make_features_df_from_batch(df_in: pd.DataFrame) -> pd.DataFrame:
     )
 
     df_feat = pd.DataFrame({
-        "Transaction Amount": pd.to_numeric(amount, errors="coerce"),
-        "Account Age Days": pd.to_numeric(account_age, errors="coerce"),
+        "Transaction Amount": pd.to_numeric(amount_batch, errors="coerce"),
+        "Account Age Days": pd.to_numeric(account_age_batch, errors="coerce"),
     })
     bad = df_feat.isna().any(axis=1)
     if bool(bad.any()):
-        raise ValueError("Nie da sie zrzutować 'ammount'/'account_age' na liczby w niektorych wierszach"
-                         f"Indeksy z błędem: {df_in.index[bad].tolist()}")
+        raise ValueError(
+            "Nie da sie zrzutować 'ammount'/'account_age' na liczby w niektorych wierszach"
+            f"Indeksy z błędem: {df_in_batch.index[bad].tolist()}"
+        )
     return df_feat[FEATURES]
 def _is_fraudulent_style(val: bool) -> str:
     """Return CSS styling for the 'Is Fraudulent' column in Streamlit tables.
@@ -178,7 +176,7 @@ def metric_card(label: str, value: str) -> None:
     )
 
 try:
-    bundle = load_model(MODEL_DEFAULT_PATH);
+    bundle = load_model(MODEL_DEFAULT_PATH)
 except Exception as e:
     st.error(e)
     st.stop()
@@ -252,7 +250,7 @@ if is_single:
         p1 = float(row["probability_of_value_1"])
         confidence = max(p0, p1)
 
-        is_fraud = (pred == 1)
+        is_fraud = pred == 1
 
         if is_fraud:
             st.error("🚨 Fraudulent: **TAK**")
@@ -291,6 +289,5 @@ else:
 
             st.write("Wyniki:")
             st.dataframe(styled, width='stretch', hide_index=True)
-
         except Exception as e:
             st.error(e)

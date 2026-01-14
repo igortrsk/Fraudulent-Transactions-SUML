@@ -100,21 +100,27 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     p_train = sub.add_parser("train", help="Train model and export to pickle")
-    p_train.add_argument("--data", required=True, help="Path to Train CSV (must include target column)")
+    p_train.add_argument(
+        "--data", required=True, help="Path to Train CSV (must include target column)")
     p_train.add_argument("--out", default="models/fraud_rf_bundle.pkl", help="Output pickle path")
     p_train.add_argument("--test-size", type=float, default=0.2)
     p_train.add_argument("--seed", type=int, default=1337)
     p_train.set_defaults(func=cmd_train)
 
     p_pred = sub.add_parser("predict", help="Load pickle model and score new data")
-    p_pred.add_argument("--model", default="models/fraud_rf_bundle.pkl", help="Path to saved pickle bundle")
+    p_pred.add_argument(
+        "--model", default="models/fraud_rf_bundle.pkl", help="Path to saved pickle bundle")
     p_pred.add_argument("--data", required=True, help="Path to CSV with features only")
-    p_pred.add_argument("--out", default="data/scored.csv", help="Where to save scored CSV (empty to print)")
+    p_pred.add_argument(
+        "--out", default="data/scored.csv", help="Where to save scored CSV (empty to print)")
     p_pred.set_defaults(func=cmd_predict)
 
-    p_eval = sub.add_parser("eval", help="Evaluate a saved pickle model on labeled test CSV (with target column)")
-    p_eval.add_argument("--model", default="models/fraud_rf_bundle.pkl", help="Path to saved pickle bundle")
-    p_eval.add_argument("--data", required=True, help="Path to TEST CSV (must include target column)")
+    p_eval = sub.add_parser(
+        "eval", help="Evaluate a saved pickle model on labeled test CSV (with target column)")
+    p_eval.add_argument(
+        "--model", default="models/fraud_rf_bundle.pkl", help="Path to saved pickle bundle")
+    p_eval.add_argument(
+        "--data", required=True, help="Path to TEST CSV (must include target column)")
     p_eval.set_defaults(func=cmd_eval)
 
     return p
