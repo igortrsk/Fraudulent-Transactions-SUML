@@ -1,0 +1,114 @@
+/* Page */
+.block-container { max-width: 1200px; padding-top: 2.6rem; padding-bottom: 2.5rem; }
+
+/* Header */
+.app-header {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:18px;
+    margin-top: 10px;
+    }
+.shield {
+    width:34px;
+    height:34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    }
+.h-title {
+    font-size:44px;
+    line-height:1.15;
+    font-weight:800;
+    color:#0F172A;
+    padding-top: 4px;
+    }
+.h-subtitle {
+    margin-top:6px;
+    color:#64748B;
+    font-size:18px;
+    font-weight:500;
+    }
+
+/* Stats */
+.metric-card {
+  background:#FFFFFF;
+  border:1px solid #E5EAF2;
+  border-radius:14px;
+  padding:18px 18px 16px 18px;
+  box-shadow:0 1px 0 rgba(15,23,42,0.02);
+  }
+.metric-label {
+    color:#475569;
+    font-size:16px;
+    font-weight:600;
+    margin-bottom:6px;
+}
+.metric-value {
+    color:#0F172A;
+    font-size:40px;
+    font-weight:800;
+}
+
+.panel-title {
+    font-size:30px;
+    font-weight:800;
+    color:#0F172A;
+    margin:0 0 18px 0;
+}
+.section-label {
+    color:#334155;
+    font-weight:700;
+    font-size:16px;
+    margin:0 0 10px 0;
+}
+
+/* Submit bttn */
+div.stButton > button[kind="primary"],
+div.stFormSubmitButton > button[kind="primary"]{
+  width:100%;
+  height:56px;
+  border-radius:14px;
+  font-size:18px;
+  font-weight:800;
+}
+/* Radio bttns */
+div[data-testid="stRadio"] div[role="radiogroup"]{
+  display:flex;
+  gap:16px;
+}
+
+div[data-testid="stRadio"] label{
+  flex:1;
+  background:#FFFFFF;
+  border:2px solid #E5EAF2;
+  border-radius:14px;
+  padding:16px 16px;
+  margin:0 !important;
+}
+div[data-testid="stRadio"] label div{
+  white-space: pre-line;
+}
+
+div[data-testid="stRadio"] label div{
+  font-weight:800;
+  color:#0F172A;
+  line-height:1.2;
+}
+
+div[data-testid="stRadio"] label div{
+  font-size:14px;
+  font-weight:700;
+  color:#64748B;
+}
+div[data-testid="stRadio"] label div::first-line{
+  color:#0F172A;
+  font-weight:800;
+  font-size:18px;
+}
+
+div[data-testid="stRadio"] label:has(input:checked){
+  border-color:#2563EB;
+  background:#EFF6FF;
+}
+

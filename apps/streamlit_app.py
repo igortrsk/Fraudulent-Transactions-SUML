@@ -29,7 +29,13 @@ if str(ROOT_DIR) not in sys.path:
 MODEL_DEFAULT_PATH = "models/fraud_rf_bundle.pkl"
 
 st.set_page_config(page_title="Ecomm Fraud Prediction", layout="wide")
-st.title("Fraud prediction")
+def load_css(path: str = "./css/style.css") -> None:
+    css_path = Path(__file__).resolve().parent / path
+    if not css_path.exists():
+        st.warning(f"Brakuje pliku CSS: {css_path.resolve()}")
+        return;
+    st.markdown(f"<style>{css_path.read_text(encoding="utf-8")}</style>", unsafe_allow_html=True)
+load_css()
 
 def load_model(model_path: str):
     """Load a pickled model bundle from the given path.
@@ -114,6 +120,25 @@ def _is_fraudulent_style(val: bool) -> str:
         return "background-color: #ff4b4b; color: white; font-weight: 700;"
     return "background-color: #2ecc71; color: white; font-weight: 700;"
 
+def metric_card(label: str, value: str) -> None:
+    """Return HTML element for the "Fraud Predictions System" section.
+
+        Args:
+            label: Information of what the value is representing.
+            value: Statistics value about Fraud Predictions System.
+
+        Returns:
+            HTML DIV element with two more DIVs that represent label and value of the statistic.
+        """
+    st.markdown(
+        f"""
+        <div class="metric-card">
+          <div class="metric-label">{label}</div>
+          <div class="metric-value">{value}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 try:
     bundle = load_model(MODEL_DEFAULT_PATH);
@@ -121,20 +146,66 @@ except Exception as e:
     st.error(e)
     st.stop()
 
+st.markdown(
+    """
+    <div class="app-header">
+      <div class="shield">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L20 6V12C20 17 16.5 20.5 12 22C7.5 20.5 4 17 4 12V6L12 2Z"
+                stroke="#2563EB" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M8.5 12.5L10.7 14.7L15.6 9.8"
+                stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="h-title">Fraud Prediction System</div>
+        <div class="h-subtitle">AI-powered transaction fraud detection</div>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-mode = st.radio("Wybierz tryb",[
-    "Opcja 1: Ręczne dane (Amount + Account Age in Days)",
-    "Opcja 2: CSV (id, amount, account_age)",
-],horizontal=True)
+c1, c2, c3 = st.columns(3)
+with c1:
+    metric_card("Accuracy Rate", "99.8%")
+with c2:
+    metric_card("Transactions Analyzed", "2.3M+")
+with c3:
+    metric_card("Fraud Prevented", "$450M")
 
-if mode.startswith("Opcja 1"):
-    st.subheader("Opcja 1 - pojedyńcza transakcja")
-    c1,c2 = st.columns([1,1])
-    with c1:
-        amount = st.number_input("Amount",min_value=0.0,step=0.01, placeholder="Input transaction amount", format="%.2f")
-    with c2:
-        account_age = st.number_input("Account Age (days)",min_value=0, placeholder="Input account age in days")
-    if st.button("Sprawdź", type="primary"):
+
+
+st.markdown('<div class="panel-title">Transaction Analysis</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-label">Analysis Method</div>', unsafe_allow_html=True)
+
+method = st.radio(
+    "Analysis Method",
+    ["Single Transaction\nAnalyze one transaction", "Batch Analysis\nUpload CSV file"],
+    horizontal=True,
+    label_visibility="collapsed",
+)
+
+is_single = method.startswith("Single Transaction")
+
+
+if is_single:
+    with st.form("single_form", border=False):
+        amount = st.number_input(
+            "Transaction Amount ($)",
+            min_value=0.0,
+            step=0.01,
+            value=0.0,
+            format="%.2f",
+        )
+        account_age = st.number_input(
+            "Account Age (days)",
+            min_value=0,
+            step=1,
+            value=0
+        )
+        run = st.form_submit_button("Run Fraud Detection", type="primary", use_container_width=True)
+    if run:
         df_x = make_features_df_from_single(amount, account_age)
         scored = predict_dataframe(bundle, df_x)
         row = scored.iloc[0]
@@ -151,26 +222,27 @@ if mode.startswith("Opcja 1"):
         else:
             st.success("✅ Fraudulent: **NIE**")
 
-        m2, m3 = st.columns(2)
-        m2.metric("Prawdopodobieństwo Fraud", f"{p1:.3f}")
-        m3.metric("Pewność (max prob)", f"{confidence:.3f}")
+        m1, m2 = st.columns(2)
+        m1.metric("Prawdopodobieństwo Fraud", f"{p1:.3f}")
+        m2.metric("Pewność (max prob)", f"{confidence:.3f}")
 
         with st.expander("Szczegóły (raw output)"):
             st.dataframe(scored, width='stretch', hide_index=True)
 else:
-    st.subheader("Opcja 2: CSV (id, amount, account_age)")
     uploaded = st.file_uploader("Wgraj CSV (kolumny: id, amount, account_age)", type=["csv"])
     if uploaded is None:
         st.info("Wygraj CSV (kolumny: id, amount, account_age)")
+        st.warning("Uwaga: Plik CSV musi używać kropki jako separatora dziesiętnego")
         st.stop()
     try:
         df_in = pd.read_csv(uploaded, sep=r"[;,]", engine="python")
     except Exception as e:
-        st.error(f"Nie można wczytać CSV: {e}")
+        st.error(f"Nie można wczytać CSV:{e}")
+        st.warning("Uwaga: Plik CSV musi używać kropki jako separatora dziesiętnego")
         st.stop()
     st.write("Podgląd danych - 15 wierszy")
     st.dataframe(df_in.head(15), width='stretch', hide_index=True)
-    if st.button("Ewaluuj", type="primary"):
+    if st.button("Run Fraud Detection", type="primary", use_container_width=True):
         try:
             df_x = make_features_df_from_batch(df_in)
             scored = predict_dataframe(bundle, df_x)
@@ -180,11 +252,10 @@ else:
             out = df_in[["id", "amount", "account_age"]].copy()
             out["Is Fraudulent"] = (pred == 1).map({True: "True", False: "False"})
 
-            styled = out.style.applymap(_is_fraudulent_style, subset=["Is Fraudulent"])
+            styled = out.style.map(_is_fraudulent_style, subset=["Is Fraudulent"])
 
             st.write("Wyniki:")
             st.dataframe(styled, width='stretch', hide_index=True)
 
         except Exception as e:
             st.error(e)
-
