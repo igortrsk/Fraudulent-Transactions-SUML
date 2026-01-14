@@ -16,8 +16,12 @@ Etykieta:
 ├──models
 │   └──fraud_rf_bundle.pkl  # wytrenowany model na dataset z kaggle
 ├──apps
-│   └──app.py               # CLI: train / eval / predict
-│   └──streamlit_app.py     # UI w Streamlit
+│   │──app.py               # CLI: train / eval / predict
+│   │──streamlit_app.py     # UI w Streamlit
+│   │──.streamlit           
+│   │   └──config.toml      # Plik konfiguracyjny Streamlit
+│   └──css                   
+│      └──style.css         # Plik CSS określający style komponentów
 ├──src
     └──inference.py         # Predykcja i ewaluacja
     └──preprocessing.py     # Przygotowanie i skalowanie danych
