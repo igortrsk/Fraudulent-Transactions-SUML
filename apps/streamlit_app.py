@@ -68,7 +68,7 @@ def load_css(path: str = "./css/style.css") -> None:
     if not css_path.exists():
         st.warning(f"Brakuje pliku CSS: {css_path.resolve()}")
         return;
-    st.markdown(f"<style>{css_path.read_text(encoding="utf-8")}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 load_css()
 
 def load_model(model_path: str):
