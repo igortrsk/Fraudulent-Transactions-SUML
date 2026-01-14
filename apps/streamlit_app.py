@@ -31,6 +31,16 @@ MODEL_DEFAULT_PATH = "models/fraud_rf_bundle.pkl"
 st.set_page_config(page_title="Ecomm Fraud Prediction", layout="wide")
 
 def read_csv_flexible(uploaded_file) -> pd.DataFrame:
+    """
+    Read a CSV file with auto-detected delimiter (`,` or `;`).
+
+    Loads the file into a DataFrame and checks that all `REQUIRED_COLS` are present.
+    Args:
+        uploaded_file: Streamlit uploaded file object.
+
+    Returns:
+        pd.DataFrame: Parsed CSV data containing the required columns.
+    """
     raw_bytes = uploaded_file.getvalue()
     text = raw_bytes.decode("utf-8", errors="replace")
 
@@ -46,6 +56,14 @@ def read_csv_flexible(uploaded_file) -> pd.DataFrame:
     return df
 
 def load_css(path: str = "./css/style.css") -> None:
+    """Load a CSS file from the given path.
+
+    Args:
+        path: Path to the css file in projet.
+
+    Returns:
+        None
+    """
     css_path = Path(__file__).resolve().parent / path
     if not css_path.exists():
         st.warning(f"Brakuje pliku CSS: {css_path.resolve()}")
@@ -63,18 +81,6 @@ def load_model(model_path: str):
         Loaded `ModelBundle`.
     """
     return load_bundle_pickle(Path(model_path))
-
-def read_csv(file_bytes: bytes) -> pd.DataFrame:
-    """Read a CSV file from raw bytes into a dataframe.
-
-    Args:
-        file_bytes: CSV content as bytes.
-
-    Returns:
-        Parsed dataframe.
-    """
-
-    return pd.read_csv(io.BytesIO(file_bytes), decimal=",")
 
 def make_features_df_from_single(transaction_amount:float, account_age_days:int) -> pd.DataFrame:
     """Create a single-row features dataframe from manual user input.
